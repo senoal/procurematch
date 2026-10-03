@@ -1,11 +1,13 @@
 import os
 
 from flask import Flask
+from dotenv import load_dotenv
 
 from .database import close_db, init_db
 
 
 def create_app(test_config=None):
+    load_dotenv()
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_mapping(
         SECRET_KEY=os.environ.get("SECRET_KEY", "dev-change-me"),

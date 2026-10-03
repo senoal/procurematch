@@ -7,3 +7,8 @@ tests/test.sqlite
 .env
 node_modules/
 outputs/data-intake/previews/
+.venv/
+.fresh-clone-test/
+.setup-tmp/
+.coverage
+htmlcov/

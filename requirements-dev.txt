@@ -1,0 +1,7 @@
+-r requirements.txt
+
+pytest==7.4.4
+pluggy==1.0.0
+iniconfig==1.1.1
+packaging==24.1
+colorama==0.4.6

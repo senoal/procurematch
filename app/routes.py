@@ -1,6 +1,6 @@
 import json
 
-from flask import Blueprint, current_app, flash, redirect, render_template, request, url_for
+from flask import Blueprint, current_app, flash, jsonify, redirect, render_template, request, url_for
 
 from .database import get_db, seed_demo_data
 from .matching import match_invoice, run_all_matching
@@ -12,6 +12,12 @@ from .lifecycle import (
 
 
 bp = Blueprint("main", __name__)
+
+
+@bp.get("/health")
+def health():
+    get_db().execute("SELECT 1").fetchone()
+    return jsonify(status="ok", database="connected")
 
 
 @bp.app_template_filter("currency")

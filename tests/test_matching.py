@@ -40,6 +40,7 @@ def test_pages_render(app):
     assert client.get("/documents").status_code == 200
     assert client.get("/exceptions").status_code == 200
     assert client.get("/data-intake").status_code == 200
+    assert client.get("/health").get_json() == {"status": "ok", "database": "connected"}
 
 
 def test_excel_template_imports_and_matches(app):
