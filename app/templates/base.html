@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}PO Match{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+</head>
+<body>
+  <aside class="sidebar">
+    <a class="brand" href="{{ url_for('main.dashboard') }}">
+      <span class="brand-mark">P/M</span><span><b>Procure</b>Match</span>
+    </a>
+    <nav>
+      <a class="{{ 'active' if request.endpoint == 'main.dashboard' }}" href="{{ url_for('main.dashboard') }}"><span>01</span> Overview</a>
+      <a class="{{ 'active' if request.endpoint == 'main.documents' }}" href="{{ url_for('main.documents') }}"><span>02</span> Documents</a>
+      <a class="{{ 'active' if request.endpoint == 'main.exceptions' }}" href="{{ url_for('main.exceptions') }}"><span>03</span> Exceptions</a>
+      <a class="{{ 'active' if request.endpoint in ['main.data_intake', 'main.import_excel', 'main.manual_entry'] }}" href="{{ url_for('main.data_intake') }}"><span>04</span> Data Intake</a>
+    </nav>
+    <div class="sidebar-footer"><small>OPS CONSOLE / 2026</small><strong>Finance Control Desk</strong><i></i></div>
+  </aside>
+  <main>
+    <header class="topbar">
+      <button class="menu" aria-label="Buka menu">☰</button>
+      <div><span class="eyebrow">CONTROL DESK / PURCHASE OPERATIONS</span><h1>{% block heading %}Overview{% endblock %}</h1></div>
+      <div class="system-state"><i></i><span>System online</span></div>
+      <div class="avatar">FA</div>
+    </header>
+    <section class="content">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}<div class="alert {{ category }}">{{ message }}</div>{% endfor %}
+      {% endwith %}
+      {% block content %}{% endblock %}
+    </section>
+  </main>
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

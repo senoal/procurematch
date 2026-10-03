@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block title %}Overview · ProcureMatch{% endblock %}
+{% block heading %}Matching overview{% endblock %}
+{% block content %}
+<div class="page-intro">
+  <div><span class="section-code">DAILY CONTROL SHEET</span><h2>Good morning, Finance Team</h2><p>Monitor dokumen pengadaan dan exception yang memerlukan perhatian.</p></div>
+  <div class="actions">
+    {% if metrics.po == 0 %}<form method="post" action="{{ url_for('main.seed') }}"><button class="button secondary">Load demo data</button></form>{% endif %}
+    <form method="post" action="{{ url_for('main.run_matching') }}"><button class="button primary">Run matching</button></form>
+  </div>
+</div>
+
+<div class="metric-grid">
+  <article class="metric"><span class="metric-icon navy">PO</span><div><small>01 / Total purchase orders</small><strong>{{ metrics.po }}</strong><em>Active documents</em></div></article>
+  <article class="metric"><span class="metric-icon blue">IV</span><div><small>02 / Total invoices</small><strong>{{ metrics.invoices }}</strong><em>Submitted by suppliers</em></div></article>
+  <article class="metric"><span class="metric-icon green">OK</span><div><small>03 / Successfully matched</small><strong>{{ metrics.matched }}</strong><em>Ready for payment</em></div></article>
+  <article class="metric"><span class="metric-icon amber">!!</span><div><small>04 / Requires attention</small><strong>{{ metrics.exceptions }}</strong><em>Review discrepancies</em></div></article>
+</div>
+
+<div class="dashboard-grid">
+  <section class="panel status-panel">
+    <div class="panel-heading"><div><h3>Matching health</h3><p>Current result distribution</p></div></div>
+    {% set total = statuses|sum(attribute='total') %}
+    {% if total %}
+      <div class="health-ring" style="--percent: {{ (metrics.matched / total * 100)|round|int }}"><div><strong>{{ (metrics.matched / total * 100)|round|int }}%</strong><span>match rate</span></div></div>
+      <div class="legend">
+      {% for item in statuses %}<div><span class="dot {{ item.status|lower|replace(' ', '-') }}"></span><span>{{ item.status }}</span><strong>{{ item.total }}</strong></div>{% endfor %}
+      </div>
+    {% else %}
+      <div class="empty compact"><strong>No matching result yet</strong><span>Load demo data or add transactions to begin.</span></div>
+    {% endif %}
+  </section>
+  <section class="panel table-panel">
+    <div class="panel-heading"><div><h3>Recent invoices</h3><p>Latest matching activity</p></div><a href="{{ url_for('main.documents') }}">View all →</a></div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Invoice</th><th>Supplier</th><th>PO</th><th>Value</th><th>Status</th></tr></thead>
+      <tbody>
+      {% for row in recent %}<tr><td><strong>{{ row.invoice_number }}</strong></td><td>{{ row.supplier }}</td><td>{{ row.po_number or '—' }}</td><td>{{ row.total_invoice|currency }}</td><td><span class="badge {{ (row.status or 'not-processed')|lower|replace(' ', '-') }}">{{ row.status or 'Not processed' }}</span></td></tr>
+      {% else %}<tr><td colspan="5" class="empty-cell">No invoice data available.</td></tr>{% endfor %}
+      </tbody>
+    </table></div>
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}Exceptions · ProcureMatch{% endblock %}
+{% block heading %}Exception management{% endblock %}
+{% block content %}
+<div class="page-intro"><div><span class="section-code">EXCEPTION QUEUE</span><h2>Transactions requiring review</h2><p>Prioritaskan selisih harga, kuantitas, dan dokumen yang belum lengkap.</p></div><form method="post" action="{{ url_for('main.run_matching') }}"><button class="button primary">Refresh validation</button></form></div>
+<div class="exception-list">
+{% for result in results %}
+  <article class="exception-card">
+    <div class="exception-head"><div><span class="badge {{ result.status|lower|replace(' ', '-') }}">{{ result.status }}</span><h3>{{ result.invoice_number }}</h3><p>{{ result.supplier }} · {{ result.po_number or 'No linked PO' }}</p></div><div class="amount"><small>Invoice value</small><strong>{{ result.total_invoice|currency }}</strong><span>{{ result.discrepancy_count }} issue{{ 's' if result.discrepancy_count != 1 }}</span></div></div>
+    <div class="issue-list">
+    {% for issue in result.issues %}<div class="issue"><span class="issue-icon {{ issue.severity }}">!</span><div><strong>{{ issue.code|replace('_', ' ')|title }}</strong><p>{{ issue.message }}{% if issue.product %} <em>{{ issue.product }}</em>{% endif %}</p></div></div>{% endfor %}
+    </div>
+  </article>
+{% else %}<div class="empty panel"><strong>No exceptions found</strong><span>All processed transactions are matched.</span></div>{% endfor %}
+</div>
+{% endblock %}

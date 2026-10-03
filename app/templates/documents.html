@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}Documents · ProcureMatch{% endblock %}
+{% block heading %}Procurement documents{% endblock %}
+{% block content %}
+<div class="page-intro"><div><span class="section-code">MASTER DOCUMENT INDEX</span><h2>Document registry</h2><p>Purchase order, invoice, dan goods receipt dalam satu tampilan.</p></div></div>
+
+<div class="tabs" data-tabs>
+  <button class="active" data-tab="po">Purchase Orders <b>{{ purchase_orders|length }}</b></button>
+  <button data-tab="invoice">Invoices <b>{{ invoices|length }}</b></button>
+  <button data-tab="receipt">Goods Receipts <b>{{ receipts|length }}</b></button>
+</div>
+<section class="panel tab-panel active" data-panel="po"><div class="table-wrap"><table>
+  <thead><tr><th>PO number</th><th>Supplier</th><th>Order date</th><th>Expected</th><th>Total</th><th>Version</th><th>Status</th></tr></thead>
+  <tbody>{% for row in purchase_orders %}<tr><td><a class="document-link" href="{{ url_for('main.document_detail', entity='po', document_id=row.id) }}">{{ row.po_number }}</a></td><td>{{ row.supplier }}</td><td>{{ row.order_date }}</td><td>{{ row.expected_date or '—' }}</td><td>{{ row.total|currency }}</td><td>v{{ row.version }}</td><td><span class="badge {{ row.status|lower }}">{{ row.status }}</span></td></tr>{% else %}<tr><td colspan="7" class="empty-cell">Belum ada purchase order.</td></tr>{% endfor %}</tbody>
+</table></div></section>
+<section class="panel tab-panel" data-panel="invoice"><div class="table-wrap"><table>
+  <thead><tr><th>Invoice</th><th>Supplier</th><th>PO</th><th>Date</th><th>Total</th><th>Lifecycle</th><th>Match status</th></tr></thead>
+  <tbody>{% for row in invoices %}<tr><td><a class="document-link" href="{{ url_for('main.document_detail', entity='invoice', document_id=row.id) }}">{{ row.invoice_number }}</a></td><td>{{ row.supplier }}</td><td>{{ row.po_number or '—' }}</td><td>{{ row.invoice_date }}</td><td>{{ row.total|currency }}</td><td><span class="badge {{ row.status|lower }}">{{ row.status }} · v{{ row.version }}</span></td><td><span class="badge {{ (row.match_status or 'not-processed')|lower|replace(' ', '-') }}">{{ row.match_status or 'Not processed' }}</span></td></tr>{% else %}<tr><td colspan="7" class="empty-cell">Belum ada invoice.</td></tr>{% endfor %}</tbody>
+</table></div></section>
+<section class="panel tab-panel" data-panel="receipt"><div class="table-wrap"><table>
+  <thead><tr><th>Receipt number</th><th>PO</th><th>Date received</th><th>Lines</th><th>Total quantity</th><th>Version</th><th>Status</th></tr></thead>
+  <tbody>{% for row in receipts %}<tr><td><a class="document-link" href="{{ url_for('main.document_detail', entity='receipt', document_id=row.id) }}">{{ row.receipt_number }}</a></td><td>{{ row.po_number }}</td><td>{{ row.receipt_date }}</td><td>{{ row.line_count }}</td><td>{{ row.quantity|round(2) }}</td><td>v{{ row.version }}</td><td><span class="badge {{ row.status|lower }}">{{ row.status }}</span></td></tr>{% else %}<tr><td colspan="7" class="empty-cell">Belum ada goods receipt.</td></tr>{% endfor %}</tbody>
+</table></div></section>
+{% endblock %}

@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% block title %}Data Intake · ProcureMatch{% endblock %}
+{% block heading %}Data intake{% endblock %}
+{% block content %}
+<div class="page-intro intake-intro">
+  <div><span class="section-code">DOCUMENT INTAKE STATION</span><h2>Add procurement data</h2><p>Impor satu workbook atau masukkan dokumen secara manual.</p></div>
+</div>
+
+<div class="intake-mode" data-tabs>
+  <button class="active" data-tab="excel"><span>01</span><strong>Excel import</strong><small>Batch upload</small></button>
+  <button data-tab="manual"><span>02</span><strong>Manual entry</strong><small>Single document</small></button>
+</div>
+
+<section class="intake-panel tab-panel active" data-panel="excel">
+  <div class="intake-copy">
+    <span class="section-code">BATCH PROCESS</span>
+    <h3>Import an Excel workbook</h3>
+    <p>Gunakan template standar agar relasi PO, penerimaan, dan invoice dapat divalidasi sebelum data disimpan.</p>
+    <ol class="steps">
+      <li><b>Download</b><span>Isi template tanpa mengubah nama sheet atau header.</span></li>
+      <li><b>Validate</b><span>Sistem memeriksa nomor dokumen, referensi, dan tipe data.</span></li>
+      <li><b>Commit</b><span>Semua baris disimpan sekaligus, lalu matching dijalankan.</span></li>
+    </ol>
+    <a class="template-link" href="{{ url_for('static', filename='templates/purchase_order_import_template.xlsx') }}" download>Download Excel template <span>↓</span></a>
+  </div>
+  <form class="upload-zone" method="post" action="{{ url_for('main.import_excel') }}" enctype="multipart/form-data">
+    <label for="workbook">
+      <span class="upload-glyph">XLS</span>
+      <strong>Choose workbook</strong>
+      <small>.xlsx only · maximum 5 MB</small>
+      <em data-file-name>No file selected</em>
+    </label>
+    <input id="workbook" name="workbook" type="file" accept=".xlsx" required>
+    <button class="button primary" type="submit">Validate & import</button>
+  </form>
+</section>
+
+<section class="intake-panel tab-panel" data-panel="manual">
+  <div class="manual-sidebar">
+    <span class="section-code">ENTRY TYPE</span>
+    <button class="active" type="button" data-form-tab="supplier">Supplier</button>
+    <button type="button" data-form-tab="product">Product</button>
+    <button type="button" data-form-tab="po">Purchase order</button>
+    <button type="button" data-form-tab="receipt">Goods receipt</button>
+    <button type="button" data-form-tab="invoice">Invoice</button>
+  </div>
+  <div class="manual-forms">
+    <form method="post" action="{{ url_for('main.manual_entry') }}" data-form-panel="supplier" class="entry-form active">
+      <input type="hidden" name="entity" value="supplier"><div class="form-heading"><span>01</span><div><h3>New supplier</h3><p>Buat master supplier sebelum membuat PO.</p></div></div>
+      <div class="form-grid"><label>Supplier code<input name="code" placeholder="SUP-004" required></label><label>Supplier name<input name="name" placeholder="PT Mitra Niaga" required></label></div>
+      <button class="button primary" type="submit">Save supplier</button>
+    </form>
+    <form method="post" action="{{ url_for('main.manual_entry') }}" data-form-panel="product" class="entry-form">
+      <input type="hidden" name="entity" value="product"><div class="form-heading"><span>02</span><div><h3>New product</h3><p>Tambahkan SKU yang digunakan dalam dokumen.</p></div></div>
+      <div class="form-grid"><label>Product SKU<input name="sku" placeholder="PRD-NEW-01" required></label><label>Product name<input name="name" placeholder="Nama produk" required></label></div>
+      <button class="button primary" type="submit">Save product</button>
+    </form>
+    <form method="post" action="{{ url_for('main.manual_entry') }}" data-form-panel="po" class="entry-form">
+      <input type="hidden" name="entity" value="po"><div class="form-heading"><span>03</span><div><h3>New purchase order</h3><p>Versi demo menyimpan satu baris produk per dokumen.</p></div></div>
+      <div class="form-grid three"><label>PO number<input name="po_number" placeholder="PO-2026-004" required></label><label>Supplier<select name="supplier_id" required><option value="">Select supplier</option>{% for item in suppliers %}<option value="{{ item.id }}">{{ item.code }} · {{ item.name }}</option>{% endfor %}</select></label><label>Product<select name="product_id" required><option value="">Select product</option>{% for item in products %}<option value="{{ item.id }}">{{ item.sku }} · {{ item.name }}</option>{% endfor %}</select></label><label>Order date<input name="order_date" type="date" required></label><label>Expected date<input name="expected_date" type="date"></label><label>Quantity<input name="quantity" type="number" min="0.01" step="0.01" required></label><label>Unit price (IDR)<input name="unit_price" type="number" min="0" step="0.01" required></label></div>
+      <button class="button primary" type="submit">Save purchase order</button>
+    </form>
+    <form method="post" action="{{ url_for('main.manual_entry') }}" data-form-panel="receipt" class="entry-form">
+      <input type="hidden" name="entity" value="receipt"><div class="form-heading"><span>04</span><div><h3>New goods receipt</h3><p>Pilih produk yang terdapat pada PO terkait.</p></div></div>
+      <div class="form-grid three"><label>Receipt number<input name="receipt_number" placeholder="GR-2026-004" required></label><label>Purchase order<select name="purchase_order_id" required><option value="">Select PO</option>{% for item in purchase_orders %}<option value="{{ item.id }}">{{ item.po_number }} · {{ item.supplier }}</option>{% endfor %}</select></label><label>Product<select name="product_id" required><option value="">Select product</option>{% for item in products %}<option value="{{ item.id }}">{{ item.sku }} · {{ item.name }}</option>{% endfor %}</select></label><label>Receipt date<input name="receipt_date" type="date" required></label><label>Quantity received<input name="quantity" type="number" min="0.01" step="0.01" required></label></div>
+      <button class="button primary" type="submit">Save goods receipt</button>
+    </form>
+    <form method="post" action="{{ url_for('main.manual_entry') }}" data-form-panel="invoice" class="entry-form">
+      <input type="hidden" name="entity" value="invoice"><div class="form-heading"><span>05</span><div><h3>New invoice</h3><p>Supplier mengikuti PO yang dipilih. Invoice disimpan sebagai Draft.</p></div></div>
+      <div class="form-grid three"><label>Invoice number<input name="invoice_number" placeholder="INV-NEW-001" required></label><label>Purchase order<select name="purchase_order_id" required><option value="">Select PO</option>{% for item in purchase_orders %}<option value="{{ item.id }}">{{ item.po_number }} · {{ item.supplier }}</option>{% endfor %}</select></label><label>Product<select name="product_id" required><option value="">Select product</option>{% for item in products %}<option value="{{ item.id }}">{{ item.sku }} · {{ item.name }}</option>{% endfor %}</select></label><label>Invoice date<input name="invoice_date" type="date" required></label><label>Quantity billed<input name="quantity" type="number" min="0.01" step="0.01" required></label><label>Unit price (IDR)<input name="unit_price" type="number" min="0" step="0.01" required></label></div>
+      <button class="button primary" type="submit">Save invoice draft</button>
+    </form>
+  </div>
+</section>
+{% endblock %}

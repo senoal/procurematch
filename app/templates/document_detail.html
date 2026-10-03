@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% block title %}{{ document[config.number] }} · ProcureMatch{% endblock %}
+{% block heading %}Document control{% endblock %}
+{% block content %}
+{% if entity == 'po' %}{% set document_date = document.order_date %}{% elif entity == 'receipt' %}{% set document_date = document.receipt_date %}{% else %}{% set document_date = document.invoice_date %}{% endif %}
+<div class="detail-head">
+  <div><a class="back-link" href="{{ url_for('main.documents') }}">← Document registry</a><span class="section-code">{{ config.label|upper }} / VERSION {{ document.version }}</span><h2>{{ document[config.number] }}</h2><p>{{ document.supplier }}{% if document.po_number %} · {{ document.po_number }}{% endif %}</p></div>
+  <div class="detail-status"><small>Lifecycle status</small><span class="badge large {{ document.status|lower }}">{{ document.status }}</span>{% if entity == 'invoice' %}<small>Matching: {{ document.match_status or 'Not processed' }}</small>{% endif %}</div>
+</div>
+
+<div class="detail-layout">
+  <div class="detail-main">
+    <section class="panel detail-section">
+      <div class="panel-heading"><div><h3>Document data</h3><p>{% if document.status == 'Draft' %}Editable until submitted.{% else %}Read-only. Open a revision to make corrections.{% endif %}</p></div></div>
+      <form method="post" action="{{ url_for('main.edit_document', entity=entity, document_id=document.id) }}" class="detail-form">
+        <div class="form-grid three">
+          <label>Document number<input name="document_number" value="{{ document[config.number] }}" required {% if document.status != 'Draft' %}disabled{% endif %}></label>
+          {% if entity == 'po' %}
+          <label>Supplier<select name="supplier_id" required {% if document.status != 'Draft' %}disabled{% endif %}>{% for item in suppliers %}<option value="{{ item.id }}" {{ 'selected' if item.id == document.supplier_id }}>{{ item.code }} · {{ item.name }}</option>{% endfor %}</select></label>
+          {% else %}
+          <label>Purchase order<select name="purchase_order_id" required {% if document.status != 'Draft' %}disabled{% endif %}>{% for item in purchase_orders %}<option value="{{ item.id }}" {{ 'selected' if item.id == document.purchase_order_id }}>{{ item.po_number }} · {{ item.supplier }}</option>{% endfor %}</select></label>
+          {% endif %}
+          <label>Document date<input name="document_date" type="date" value="{{ document_date }}" required {% if document.status != 'Draft' %}disabled{% endif %}></label>
+          {% if entity == 'po' %}<label>Expected date<input name="expected_date" type="date" value="{{ document.expected_date or '' }}" {% if document.status != 'Draft' %}disabled{% endif %}></label>{% endif %}
+        </div>
+        <div class="line-heading"><div><span class="section-code">LINE ITEMS</span><h3>Products</h3></div>{% if document.status == 'Draft' %}<button class="mini-button" type="button" data-add-line>Add line</button>{% endif %}</div>
+        <div class="line-items" data-line-items>
+        {% for item in items %}
+          <div class="line-row">
+            <label>Product<select name="product_id" required {% if document.status != 'Draft' %}disabled{% endif %}>{% for product in products %}<option value="{{ product.id }}" {{ 'selected' if product.id == item.product_id }}>{{ product.sku }} · {{ product.name }}</option>{% endfor %}</select></label>
+            <label>Quantity<input name="quantity" type="number" min="0.01" step="0.01" value="{{ item.quantity }}" required {% if document.status != 'Draft' %}disabled{% endif %}></label>
+            {% if entity in ['po', 'invoice'] %}<label>Unit price<input name="unit_price" type="number" min="0" step="0.01" value="{{ item.unit_price }}" required {% if document.status != 'Draft' %}disabled{% endif %}></label>{% endif %}
+            {% if document.status == 'Draft' %}<button type="button" class="remove-line" data-remove-line aria-label="Remove line">×</button>{% endif %}
+          </div>
+        {% endfor %}
+        </div>
+        {% if document.status == 'Draft' %}<button class="button primary" type="submit">Save draft changes</button>{% endif %}
+      </form>
+    </section>
+
+    <section class="panel detail-section">
+      <div class="panel-heading"><div><h3>Audit history</h3><p>Lifecycle and validation activity for this document.</p></div></div>
+      <div class="audit-list">
+      {% for entry in history %}
+        <div class="audit-entry {{ 'has-changes' if entry.changes }}">
+          <i></i>
+          <div class="audit-content">
+            <strong>{{ entry.action|replace('_', ' ')|title }}</strong>
+            <p class="audit-summary">{{ entry.summary }}</p>
+            {% if entry.changes %}<div class="change-list">{% for change in entry.changes %}<div class="change-row"><b>{{ change.label }}</b><span class="old-value">{{ change.before }}</span><em>→</em><span class="new-value">{{ change.after }}</span></div>{% endfor %}</div>{% endif %}
+          </div>
+          <time>{{ entry.created_at }}</time>
+        </div>
+      {% else %}<div class="empty compact"><span>No audit activity recorded.</span></div>{% endfor %}
+      </div>
+    </section>
+  </div>
+
+  <aside class="control-panel">
+    <span class="section-code">LIFECYCLE CONTROL</span><h3>Available actions</h3>
+    {% if document.status == 'Draft' %}
+      <p>Submit setelah data diperiksa. Dokumen menjadi read-only dan masuk proses matching.</p>
+      <form method="post" action="{{ url_for('main.document_action', entity=entity, document_id=document.id, action='submit') }}"><button class="button primary full" type="submit">Submit document</button></form>
+      <form method="post" action="{{ url_for('main.document_action', entity=entity, document_id=document.id, action='delete') }}" onsubmit="return confirm('Hapus draft ini secara permanen?')"><button class="text-action danger" type="submit">Delete unprocessed draft</button></form>
+    {% elif document.status == 'Submitted' %}
+      <p>Perubahan memerlukan revisi baru agar versi sebelumnya tetap tersimpan.</p>
+      <form method="post" action="{{ url_for('main.document_action', entity=entity, document_id=document.id, action='revise') }}" class="reason-form"><label>Revision reason<textarea name="reason" required placeholder="Jelaskan data yang perlu diperbaiki"></textarea></label><button class="button secondary full" type="submit">Open revision</button></form>
+      <form method="post" action="{{ url_for('main.document_action', entity=entity, document_id=document.id, action='cancel') }}" class="reason-form"><label>Cancellation reason<textarea name="reason" required placeholder="Jelaskan alasan pembatalan"></textarea></label><button class="button danger-button full" type="submit">Cancel / Void</button></form>
+    {% else %}
+      <div class="locked-state"><b>VOID</b><span>Dokumen dibatalkan dan dipertahankan untuk kebutuhan audit.</span></div>
+    {% endif %}
+    <div class="version-list"><h4>Stored revisions</h4>{% for revision in revisions %}<div><strong>Version {{ revision.version }}</strong><span>{{ revision.reason }}</span><time>{{ revision.created_at }}</time></div>{% else %}<small>No previous revisions.</small>{% endfor %}</div>
+  </aside>
+</div>
+
+{% if document.status == 'Draft' %}
+<template id="line-template"><div class="line-row"><label>Product<select name="product_id" required>{% for product in products %}<option value="{{ product.id }}">{{ product.sku }} · {{ product.name }}</option>{% endfor %}</select></label><label>Quantity<input name="quantity" type="number" min="0.01" step="0.01" required></label>{% if entity in ['po', 'invoice'] %}<label>Unit price<input name="unit_price" type="number" min="0" step="0.01" required></label>{% endif %}<button type="button" class="remove-line" data-remove-line aria-label="Remove line">×</button></div></template>
+{% endif %}
+{% endblock %}
